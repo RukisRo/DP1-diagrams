@@ -1,0 +1,41 @@
+@startuml
+hide circle
+
+package " Capa de Presentación " as Presentacion {
+    hide members
+    class UserController
+    class GameController
+    class AuthController
+}
+
+package " Capa de Lógica de Negocio " as LogicaNegocio {
+    hide members
+    class GameService
+    class AuthoritiesService
+    class UserService        
+}
+
+package " Capa de Recursos " as Recursos {
+    hide attributes
+    interface AuthoritiesRepository 
+    interface UserRepository 
+    interface GameRepository {
+        Iterable<Game> findAllByCreatorUser(User user);
+        Iterable<Game> findAllByParticipateUser(User user);
+        Iterable<Game> findAllByCreatorOrParticipateUser(User user);
+    }    
+}
+
+GameController ..> GameService
+UserController ..> UserService
+UserController ..> AuthoritiesService
+AuthController ..> UserService
+
+
+AuthoritiesService ..> UserService
+
+GameService ..> GameRepository
+GameService ..> UserRepository
+UserService ..> UserRepository
+AuthoritiesService ..> AuthoritiesRepository
+@enduml
