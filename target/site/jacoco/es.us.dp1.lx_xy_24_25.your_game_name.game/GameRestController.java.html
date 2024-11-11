@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameRestController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.game</a> &gt; <span class="el_source">GameRestController.java</span></div><h1>GameRestController.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.game;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/v1/games&quot;)
+@SecurityRequirement(name = &quot;bearerAuth&quot;)
+public class GameRestController {
+
+    private final GameService gameService;
+
+    @Autowired
+<span class="fc" id="L20">    public GameRestController(GameService gameService) {</span>
+<span class="fc" id="L21">        this.gameService = gameService;</span>
+<span class="fc" id="L22">    }</span>
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;Game&gt;&gt; findAllGames() {
+<span class="nc" id="L26">        List&lt;Game&gt; res = (List&lt;Game&gt;) gameService.getAllGames(); // Suponiendo que tienes este método en GameService</span>
+<span class="nc" id="L27">        return new ResponseEntity&lt;&gt;(res, HttpStatus.OK);</span>
+    }
+
+    // Endpoint para crear una nueva partida
+    @PostMapping
+    public ResponseEntity&lt;Game&gt; createGame(@RequestBody GameCreationRequest request) {
+<span class="nc" id="L33">        Game game = gameService.createGame(request.getGameName(), request.getPlayersNumber(),</span>
+<span class="nc" id="L34">                request.getCreatorUserId());</span>
+                //TODO: Cambiar response y no devolver game entero, devuelve password
+<span class="nc" id="L36">        return ResponseEntity.status(HttpStatus.CREATED).body(game);</span>
+    }
+
+    // Conseguir Code con ID de partida
+    @GetMapping(&quot;/{id}/code&quot;)
+    public ResponseEntity&lt;String&gt; getGameCode(@PathVariable int id) {
+<span class="nc" id="L42">        String gameCode = gameService.getGameCodeById(id);</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (gameCode != null) {</span>
+<span class="nc" id="L44">            return ResponseEntity.ok(gameCode);</span>
+        } else {
+<span class="nc" id="L46">            return ResponseEntity.notFound().build();</span>
+        }   
+    }
+
+    
+    // Endpoint para obtener todas las partidas CREADAS por un usuario      
+    @GetMapping(&quot;/creator/{creatorUserId}&quot;)
+    public ResponseEntity&lt;Iterable&lt;Game&gt;&gt; getAllGamesByCreatorUser(@PathVariable int creatorUserId) {
+<span class="nc" id="L54">          Iterable&lt;Game&gt; games = gameService.getAllGamesByCreatorUser(creatorUserId);</span>
+<span class="nc" id="L55">          return ResponseEntity.ok(games);</span>
+    }
+
+    // Endpoint para obtener todas las partidas PARTICIPADAS por un usuario      
+    @GetMapping(&quot;/participate/{playerId}&quot;)
+    public ResponseEntity&lt;Iterable&lt;Game&gt;&gt; getAllGamesByParticipateUser(@PathVariable int playerId) {
+<span class="nc" id="L61">          Iterable&lt;Game&gt; games = gameService.getAllGamesByParticipateUser(playerId);</span>
+<span class="nc" id="L62">          return ResponseEntity.ok(games);</span>
+    }
+
+    // Endpoint para obtener todas las partidas CREADAS o PARTICIPADAS por un usuario      
+    @GetMapping(&quot;/creatorOrParticipate/{playerId}&quot;)
+    public ResponseEntity&lt;Iterable&lt;Game&gt;&gt; getAllGamesByCreatorOrParticipateUser(@PathVariable int playerId) {
+<span class="nc" id="L68">          Iterable&lt;Game&gt; games = gameService.getAllGamesByCreatorOrParticipateUser(playerId);</span>
+<span class="nc" id="L69">          return ResponseEntity.ok(games);</span>
+    }
+
+    
+
+
+
+
+    
+      
+     /* 
+     * // Endpoint para contar cuántas partidas ha creado un usuario
+     * 
+     * @GetMapping(&quot;/count/creator/{creatorUserId}&quot;)
+     * public ResponseEntity&lt;Long&gt; countGamesByCreatorUser(@PathVariable Long
+     * creatorUserId) {
+     * Long count = gameService.countGamesByCreatorUser(creatorUserId);
+     * return ResponseEntity.ok(count);
+     * }
+     * 
+     * // Endpoint para eliminar todas las partidas creadas por un usuario
+     * 
+     * @DeleteMapping(&quot;/creator/{creatorUserId}&quot;)
+     * public ResponseEntity&lt;Void&gt; deleteGamesByCreatorUser(@PathVariable Long
+     * creatorUserId) {
+     * gameService.deleteGamesByCreatorUser(creatorUserId);
+     * return ResponseEntity.noContent().build();
+     * }
+     */
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
