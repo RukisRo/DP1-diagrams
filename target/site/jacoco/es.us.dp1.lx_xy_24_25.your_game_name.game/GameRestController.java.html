@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameRestController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.game</a> &gt; <span class="el_source">GameRestController.java</span></div><h1>GameRestController.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.game;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/v1/games&quot;)
+@SecurityRequirement(name = &quot;bearerAuth&quot;)
+public class GameRestController {
+
+    private final GameService gameService;
+    private final UserService userService;
+    private final PlayersInGameService pigService; 
+    
+    @Autowired
+<span class="fc" id="L23">    public GameRestController(GameService gameService, UserService userService, PlayersInGameService pigService ) {</span>
+<span class="fc" id="L24">        this.gameService = gameService;</span>
+<span class="fc" id="L25">        this.userService = userService;</span>
+<span class="fc" id="L26">        this.pigService = pigService;</span>
+<span class="fc" id="L27">    }</span>
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;Game&gt;&gt; findAllGames() {
+<span class="nc" id="L31">        List&lt;Game&gt; res = (List&lt;Game&gt;) gameService.getAllGames(); // Suponiendo que tienes este método en GameService</span>
+<span class="nc" id="L32">        return new ResponseEntity&lt;&gt;(res, HttpStatus.OK);</span>
+    }
+
+    // Endpoint para crear una nueva partida
+    @PostMapping
+    public ResponseEntity&lt;Game&gt; createGame(@RequestBody GameCreationRequest request) {
+<span class="nc" id="L38">        Game game = gameService.createGame(request.getGameName(), request.getPlayersNumber());</span>
+                //TODO: Cambiar response y no devolver game entero, devuelve password
+                // Podría ser JsonIgnore o DTO, depende de lo necesitado
+<span class="nc" id="L41">        return ResponseEntity.status(HttpStatus.CREATED).body(game);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Game&gt; updateGame(@PathVariable Integer id, @RequestBody GameUpdateRequest request) {
+<span class="nc" id="L46">        Game updatedGame = gameService.updateGame(id, request.getGameName(), request.getPlayersNumber(), request.getStartDate(), request.getEndDate());</span>
+<span class="nc" id="L47">        return ResponseEntity.status(HttpStatus.OK).body(updatedGame);</span>
+    }
+
+    // Conseguir Code con ID de partida
+    @GetMapping(&quot;/{id}/code&quot;)
+    public ResponseEntity&lt;String&gt; getGameCode(@PathVariable int id) {
+<span class="nc" id="L53">        String gameCode = gameService.getGameCodeById(id);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (gameCode != null) {</span>
+<span class="nc" id="L55">            return ResponseEntity.ok(gameCode);</span>
+        } else {
+<span class="nc" id="L57">            return ResponseEntity.notFound().build();</span>
+        }   
+    }
+
+    
+    // Endpoint para obtener todas las partidas CREADAS por un usuario      
+    @GetMapping(&quot;/creator/{creatorUserId}&quot;)
+    public ResponseEntity&lt;Iterable&lt;Game&gt;&gt; getAllGamesByCreatorUser(@PathVariable int creatorUserId) {
+<span class="nc" id="L65">          Iterable&lt;Game&gt; games = gameService.getAllGamesByCreatorUser(creatorUserId);</span>
+<span class="nc" id="L66">          return ResponseEntity.ok(games);</span>
+    }
+
+    // Endpoint para obtener todas las partidas PARTICIPADAS por un usuario      
+    @GetMapping(&quot;/participate/{playerId}&quot;)
+    public ResponseEntity&lt;Iterable&lt;Game&gt;&gt; getAllGamesByParticipateUser(@PathVariable int playerId) {
+<span class="nc" id="L72">          Iterable&lt;Game&gt; games = gameService.getAllGamesByParticipateUser(playerId);</span>
+<span class="nc" id="L73">          return ResponseEntity.ok(games);</span>
+    }
+
+    // Endpoint para obtener todas las partidas CREADAS o PARTICIPADAS por un usuario      
+    @GetMapping(&quot;/creatorOrParticipate/{playerId}&quot;)
+    public ResponseEntity&lt;Iterable&lt;Game&gt;&gt; getAllGamesByCreatorOrParticipateUser(@PathVariable int playerId) {
+<span class="nc" id="L79">          Iterable&lt;Game&gt; games = gameService.getAllGamesByCreatorOrParticipateUser(playerId);</span>
+<span class="nc" id="L80">          return ResponseEntity.ok(games);</span>
+    }
+
+    // Endpoint para unirse a una partida dado un código
+    @PostMapping(&quot;/join/{gameCode}&quot;)
+    public ResponseEntity&lt;String&gt; joinGame(@PathVariable String gameCode) {
+        try {
+<span class="nc" id="L87">            Game game = gameService.findGameByGameCode(gameCode);</span>
+<span class="nc bnc" id="L88" title="All 4 branches missed.">            if (game != null &amp;&amp; game.getEndDateTime() == null) {  // Verificamos que el juego no haya terminado</span>
+<span class="nc" id="L89">                PlayersInGames player = gameService.joinPlayer(game); // Unimos al jugador a la partida</span>
+<span class="nc" id="L90">                return ResponseEntity.ok(&quot;Unido a la partida&quot;);</span>
+            } else {
+<span class="nc" id="L92">                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(&quot;Partida no encontrada o ya finalizada&quot;);</span>
+            }
+<span class="nc" id="L94">        } catch (Exception e) {</span>
+<span class="nc" id="L95">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;Error al unirse a la partida: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Trae la info de la partida por su gamecode
+    @GetMapping(&quot;/{gameCode}&quot;)
+    public ResponseEntity&lt;Game&gt; getGameByGameCode(@PathVariable String gameCode) {
+<span class="nc" id="L102">        Game game = gameService.findGameByGameCode(gameCode);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (game != null) {</span>
+<span class="nc" id="L104">            return ResponseEntity.ok(game);</span>
+        } else {
+<span class="nc" id="L106">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+
+    @PostMapping(&quot;/{gameCode}/startGame&quot;)
+    public ResponseEntity&lt;GameStartResponseDTO&gt; startGame(@PathVariable String gameCode) {
+<span class="nc" id="L113">        Game startedGame = gameService.startGame(gameCode);</span>
+
+        // Convert Game entity to GameStartResponseDTO
+<span class="nc" id="L116">        GameStartResponseDTO responseDTO = new GameStartResponseDTO(</span>
+<span class="nc" id="L117">                startedGame.getGameCode(),</span>
+<span class="nc" id="L118">                startedGame.getChat(),</span>
+<span class="nc" id="L119">                startedGame.getStartDateTime()</span>
+        );
+
+<span class="nc" id="L122">        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);</span>
+    }
+
+
+    @GetMapping(&quot;/{gameCode}/status&quot;)
+    public ResponseEntity&lt;GameStatusResponseDTO&gt; getGameStatus(@PathVariable String gameCode){
+
+<span class="nc" id="L129">        Game game = gameService.findGameByGameCode(gameCode);</span>
+<span class="nc" id="L130">        List&lt;PlayersInGames&gt; playersList = pigService.getPlayersByGameCode(gameCode);</span>
+<span class="nc" id="L131">        User loggedUser = this.userService.findUserByToken();</span>
+<span class="nc" id="L132">        PlayersInGames foundPlayer = null;</span>
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        for (PlayersInGames player : playersList) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            if (player.getIdPlayer().getId() == loggedUser.getId()) {</span>
+<span class="nc" id="L136">                foundPlayer = player;</span>
+            }
+<span class="nc" id="L138">        }</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if(foundPlayer==null){</span>
+<span class="nc" id="L140">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);</span>
+        }
+<span class="nc" id="L142">        return ResponseEntity.status(HttpStatus.OK).body(new GameStatusResponseDTO(game.getChat(), foundPlayer.getIdRol()));</span>
+    }
+}
+
+	
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

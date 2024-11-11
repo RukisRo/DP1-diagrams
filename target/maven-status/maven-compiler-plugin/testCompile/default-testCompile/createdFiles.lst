@@ -1,0 +1,11 @@
+es\us\dp1\lx_xy_24_25\your_game_name\game\GameTests$1.class
+es\us\dp1\lx_xy_24_25\your_game_name\model\ValidatorTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\auth\AuthControllerTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\game\GameTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\profile\ProfileServiceTest.class
+es\us\dp1\lx_xy_24_25\your_game_name\configuration\SpringSecurityWebAuxTestConfiguration.class
+es\us\dp1\lx_xy_24_25\your_game_name\user\UserControllerTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\user\UserServiceTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\user\AuthoritiesServiceTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\auth\AuthServiceTests.class
+es\us\dp1\lx_xy_24_25\your_game_name\user\UserCorrectlyCreatedTest.class
