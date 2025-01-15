@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.CustomBuilders</a> &gt; <span class="el_source">GameBuilder.java</span></div><h1>GameBuilder.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.CustomBuilders;
+
+import org.jpatterns.gof.BuilderPattern;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+
+@BuilderPattern.ConcreteBuilder
+<span class="fc" id="L9">public class GameBuilder implements Builder {</span>
+        
+    private String gameName;
+    private User creatorUser;
+    private int playersNumber;
+            
+    public static Builder ofType(GameType gameType) {
+        // En realidad no usamos TIPOS de partida en Game con un gameType, hemos creado el parámetro gameType
+        // para mostrar que se podrían crear distintos tipos de partida desde el Builder
+<span class="fc" id="L18">        return new GameBuilder();</span>
+    }
+    
+    @Override
+    public Builder withGameName(String gameName) {
+<span class="fc" id="L23">        this.gameName = gameName;</span>
+<span class="fc" id="L24">        return this;</span>
+    }
+
+    @Override
+    public Builder withCreatorUser(User creatorUser) {
+<span class="fc" id="L29">        this.creatorUser = creatorUser;</span>
+<span class="fc" id="L30">        return this;</span>
+    }
+
+    @Override
+    public Builder withPlayersNumber(int playersNumber) {
+<span class="fc" id="L35">        this.playersNumber = playersNumber;</span>
+<span class="fc" id="L36">        return this;</span>
+    }
+    
+    public Game build() {
+<span class="fc" id="L40">            return new Game( gameName, creatorUser, playersNumber); </span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

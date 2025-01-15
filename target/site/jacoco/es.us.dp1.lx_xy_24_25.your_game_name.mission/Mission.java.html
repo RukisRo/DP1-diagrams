@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Mission.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.mission</a> &gt; <span class="el_source">Mission.java</span></div><h1>Mission.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.mission;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.model.BaseEntity;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+<span class="fc" id="L14">@Setter</span>
+@Entity
+@Table(name = &quot;missions&quot;)
+<span class="pc bpc" id="L17" title="11 of 38 branches missed.">@EqualsAndHashCode(callSuper=false)</span>
+<span class="fc" id="L18">public class Mission extends BaseEntity {</span>
+    
+    @NotNull
+    @ManyToOne                          
+    @JoinColumn(name = &quot;idGame&quot;)
+<span class="fc" id="L23">    private Game game;</span>
+
+    // Nº de misión en la partida, irá siempre entre 1 y 5, 
+    // y por tanto no necesita ser un Id a ninguna Entidad como se diseñó en un principio 
+    // con IdMission
+    @NotNull
+    @Min(1)
+    @Max(5)
+<span class="fc" id="L31">    private Integer missionNumber; </span>
+
+    @NotNull
+    @ManyToOne                          
+    @JoinColumn(name = &quot;idUser&quot;)
+<span class="fc" id="L36">    private User user; // Usuario del Equipo conformado que vota en la Misión</span>
+
+    // Voto del usuario : true será Éxito, false será Fracaso
+    //@NotNull
+<span class="fc" id="L40">    private Boolean vote; </span>
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

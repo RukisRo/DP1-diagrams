@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Round.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.round</a> &gt; <span class="el_source">Round.java</span></div><h1>Round.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.round;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.model.BaseEntity;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+<span class="fc" id="L14">@Setter</span>
+@Entity
+@Table(name = &quot;rounds&quot;)
+<span class="pc bpc" id="L17" title="17 of 46 branches missed.">@EqualsAndHashCode(callSuper=false)</span>
+<span class="fc" id="L18">public class Round extends BaseEntity {</span>
+    
+    @NotNull
+    @ManyToOne                          
+    @JoinColumn(name = &quot;idGame&quot;)
+<span class="fc" id="L23">    private Game game; // Partida a la que está relacionada la ronda</span>
+
+    //Eliminado idUser porque no le vemos la utilidad
+
+    @NotNull
+    @ManyToOne                          
+    @JoinColumn(name = &quot;idUser&quot;)
+<span class="fc" id="L30">    private User user; // Usuario que vota en la Ronda</span>
+
+    // Si queremos saber a nivel de Estadísticas quién fue el jugador Lider de cada ronda
+    // No necesario para poder jugar la partida, el guardarlo
+    // Lo dejamos para acordarlo en el grupo
+    /*@NotNull
+    @ManyToOne                          
+    @JoinColumn(name = &quot;idLeaderUser&quot;)
+    private User leaderUser;*/
+
+    // Número de ronda que se vota para conformar Equipo, podrá ir entre 1 y 5
+    @NotNull
+    @Min(1)
+    @Max(5)
+<span class="fc" id="L44">    private Integer roundNumber; </span>
+
+    // Nº de misión a la que pertenece la Ronda en la partida, 
+    // irá siempre entre 1 y 5, y no necesita ser un Id a ninguna Entidad como se diseñó en 
+    // un principio con IdMission
+    @NotNull
+    @Min(1)
+    @Max(5)
+<span class="fc" id="L52">    private Integer missionNumber;    </span>
+
+    // Voto del usuario : true será Aprobar, false será Rechazar
+    //@NotNull
+<span class="fc" id="L56">    private Boolean vote; </span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

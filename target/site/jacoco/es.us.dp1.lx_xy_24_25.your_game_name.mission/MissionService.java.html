@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MissionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.mission</a> &gt; <span class="el_source">MissionService.java</span></div><h1>MissionService.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.mission;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.acls.model.NotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.exceptions.GameNotFoundException;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.GameRepository;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserService;
+
+@Service
+public class MissionService {
+
+    private final MissionRepository missionRepository;
+
+    // Tenemos que usar GameRepository, en lugar de GameService, para evitar un
+    // ciclo entre
+    // GameService-&gt;MissionService-&gt;GameService que impide arracar la app
+    private final GameRepository gameRepository;
+    private final UserService userService;
+
+    @Autowired
+<span class="fc" id="L29">    public MissionService(MissionRepository missionRepository, GameRepository gameRepository, UserService userService) {</span>
+<span class="fc" id="L30">        this.missionRepository = missionRepository;</span>
+<span class="fc" id="L31">        this.gameRepository = gameRepository;</span>
+<span class="fc" id="L32">        this.userService = userService;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Transactional(readOnly = true)
+    public Integer getSumVotesOfMission(Integer idGame, Integer missionId) {
+<span class="fc" id="L37">        return missionRepository.countVotesByMissionNumber(idGame, missionId);</span>
+    }
+
+    @Transactional(rollbackFor = { DataAccessException.class, GameNotFoundException.class, NotFoundException.class })
+    public Mission postVotes(MissionDTO missionDTO)
+            throws DataAccessException, GameNotFoundException, NotFoundException {
+
+        // Recuperamos la partida asociada al DTO
+        // Tenemos que usar gameRepository para evitar un ciclo
+        // GameService-&gt;MissionService-&gt;GameService
+<span class="fc" id="L47">        Game game = gameRepository.findById(missionDTO.getIdGame())</span>
+<span class="fc" id="L48">                .orElseThrow(() -&gt; new GameNotFoundException(missionDTO.getIdGame()));</span>
+
+        // Recuperamos el usuario especificado en el DTO
+<span class="fc" id="L51">        User user = this.userService.findUser(missionDTO.getIdUser());</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L53">            throw new NotFoundException(&quot;No se encontró al usuario con id :&quot; + missionDTO.getIdUser());</span>
+        }
+
+        // Creamos una nueva entidad Voto de Misión
+<span class="fc" id="L57">        Mission newMission = new Mission();</span>
+<span class="fc" id="L58">        newMission.setGame(game);</span>
+<span class="fc" id="L59">        newMission.setMissionNumber(missionDTO.getMissionNumber());</span>
+<span class="fc" id="L60">        newMission.setUser(user);</span>
+<span class="fc" id="L61">        newMission.setVote(missionDTO.getVote());</span>
+
+        // Salvamos el nuevo voto de Misión
+<span class="fc" id="L64">        return missionRepository.save(newMission);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Integer getSuccessVotesByMissionNumber(Integer idGame, Integer missionNumber) {
+<span class="fc" id="L69">        return missionRepository.countSuccessVotes(idGame, missionNumber);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Integer getFailureVotesByMissionNumber(Integer idGame, Integer missionNumber) {
+<span class="fc" id="L74">        return missionRepository.countFailureVotes(idGame, missionNumber);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Mission getCurrentMission(Integer gameId, Integer userId) {
+<span class="fc" id="L79">        List&lt;Mission&gt; missions = missionRepository.findLatestMissionByGameIdOfUser(gameId, userId);</span>
+<span class="fc" id="L80">        missions.sort((r1, r2) -&gt; Integer.compare(r2.getMissionNumber(), r1.getMissionNumber()));</span>
+
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        return missions.isEmpty() ? null : missions.get(0);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Mission whatUserVotedMission(Integer userId, Integer missionNumber) {
+<span class="fc" id="L87">        return missionRepository.whatUserVoted(userId, missionNumber).orElse(null);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Integer countVotesByMissionNumber(Integer idGame, Integer missionNum) {
+<span class="fc" id="L92">        return missionRepository.countVotesByMissionNumber(idGame, missionNum);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Mission getMission(Integer gameId, Integer userId, Integer missionNumber) {
+<span class="fc" id="L97">        return missionRepository.getMission(gameId, userId, missionNumber);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Boolean didMissionFail(Integer gameId, Integer missionNumber) {
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        return missionRepository.countFailureVotes(gameId, missionNumber) &gt; 0;</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Boolean ganaResistenciaPartida(Integer gameId) {
+<span class="fc" id="L107">        Integer contadorMisionesExitosas = 0;</span>
+<span class="fc" id="L108">        Integer numMissions = missionRepository.getDifferentMissionsByGame(gameId);</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (int i = 1; i &lt;= numMissions; i++) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (missionRepository.countFailureVotes(gameId, i) == 0) {</span>
+<span class="fc" id="L111">                contadorMisionesExitosas++;</span>
+            }
+        }
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        return contadorMisionesExitosas &gt;= 3;</span>
+
+    }
+
+    @Transactional(readOnly = true)
+    public Boolean ganaEspiaPartida(Integer gameId) {
+<span class="fc" id="L120">        Integer contadorMisionesFallidas = 0;</span>
+<span class="fc" id="L121">        Integer numMissions = missionRepository.getDifferentMissionsByGame(gameId);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        for (int i = 1; i &lt;= numMissions; i++) {</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            if (missionRepository.countFailureVotes(gameId, i) &gt; 0) {</span>
+<span class="fc" id="L124">                contadorMisionesFallidas++;</span>
+            }
+        }
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        return contadorMisionesFallidas &gt;= 3;</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Boolean isGameFinishedByMissions(Integer gameId) {
+<span class="fc" id="L132">        Boolean res = false;</span>
+<span class="fc" id="L133">        Integer numMissions = missionRepository.getDifferentMissionsByGame(gameId);</span>
+<span class="fc" id="L134">        Integer contadorMisionesFallidas = 0;</span>
+<span class="fc" id="L135">        Integer contadorMisionesExitosas = 0;</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        for (int i = 1; i &lt;= numMissions; i++) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            if (missionRepository.countFailureVotes(gameId, i) &gt; 0) {</span>
+<span class="fc" id="L138">                contadorMisionesFallidas++;</span>
+            } else {
+<span class="fc" id="L140">                contadorMisionesExitosas++;</span>
+            }
+        }
+
+<span class="pc bpc" id="L144" title="1 of 6 branches missed.">        if (contadorMisionesFallidas &gt;= 3 || contadorMisionesExitosas &gt;= 3 || numMissions &gt;= 5) {</span>
+<span class="fc" id="L145">            res = true;</span>
+        }
+<span class="fc" id="L147">        return res;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

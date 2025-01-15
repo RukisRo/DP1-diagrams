@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameJoinValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.CustomValidators</a> &gt; <span class="el_source">GameJoinValidator.java</span></div><h1>GameJoinValidator.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.CustomValidators;
+
+import org.jpatterns.gof.StrategyPattern;
+import org.jpatterns.gof.StrategyPattern.Strategy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.GameRepository;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserService;
+
+
+@Component
+@StrategyPattern
+public class GameJoinValidator implements Validator {
+    
+    private final GameRepository gameRepository;
+
+    private final UserService userService;
+
+    @Autowired
+<span class="fc" id="L25">    public GameJoinValidator(GameRepository gameRepository, UserService userService) {        </span>
+<span class="fc" id="L26">        this.gameRepository = gameRepository;</span>
+<span class="fc" id="L27">        this.userService = userService;</span>
+<span class="fc" id="L28">    }</span>
+
+    @SuppressWarnings(&quot;null&quot;)
+    @Override
+    public boolean supports(Class&lt;?&gt; clazz) {
+
+<span class="nc" id="L34">        return Game.class.isAssignableFrom(clazz);        </span>
+    }
+
+    @SuppressWarnings(&quot;null&quot;)
+    @Override
+    public void validate(Object obj, Errors errors) throws RuntimeException {
+
+        // Creamos la instancia de Game a crear o unir, aunque no se usa, porque las 
+        // validaciones de partidas Creadas o Particiadas/Unidas dependen del User
+<span class="fc" id="L43">        Game game = (Game) obj;</span>
+
+        // Y el usuario tiene que ser el usuario logado para cuando se trata de 'Unirse a una partida'
+        // y no Crearla, cuyo creador sí está como creatorUser en Game, pero no cuando
+        // es para 'Unirse a partida'
+<span class="fc" id="L48">        User user = this.userService.findUserByToken();</span>
+
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L51">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+        
+        // Validación RN &lt;17&gt; - Sólo poder UNIRSE una partida, si NO está ya en una EN CURSO
+        // Si el usuario actual a UNIR ya está unido a una partida que está en curso no
+        // podrá uniser a otra
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (gameRepository.countByParticipateUserAndGameInProgress(user) &gt; 0) {</span>
+            
+<span class="fc" id="L59">            errors.rejectValue(&quot;creatorUser&quot;, &quot;game.inProgress&quot;, &quot;El usuario ya está unido a una partida en curso.&quot;);            </span>
+        }
+<span class="fc" id="L61">    }    </span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

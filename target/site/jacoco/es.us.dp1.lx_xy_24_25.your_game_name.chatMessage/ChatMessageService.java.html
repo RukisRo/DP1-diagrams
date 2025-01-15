@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatMessageService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.chatMessage</a> &gt; <span class="el_source">ChatMessageService.java</span></div><h1>ChatMessageService.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.chatMessage;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.acls.model.NotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.exceptions.GameNotFoundException;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.GameService;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserService;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class ChatMessageService {
+    
+    private final ChatMessageRepository chatMessagesRepository;
+    
+    private final GameService gameService;    
+    private final UserService userService;
+
+    @Autowired
+<span class="fc" id="L29">    public ChatMessageService( ChatMessageRepository chatMessagesRepository, GameService gameService, UserService userService) {</span>
+<span class="fc" id="L30">        this.chatMessagesRepository = chatMessagesRepository;        </span>
+<span class="fc" id="L31">        this.gameService = gameService;        </span>
+<span class="fc" id="L32">        this.userService = userService;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Transactional(readOnly = true)
+    public List&lt;ChatMessageDTO&gt; getMessagesByGameId(Integer idGame) throws DataAccessException {
+
+<span class="fc" id="L38">        List&lt;ChatMessageDTO&gt; messageList = chatMessagesRepository.findByGameId(idGame)</span>
+<span class="fc" id="L39">                .stream()</span>
+<span class="fc" id="L40">                .map(chatMessage -&gt; new ChatMessageDTO(</span>
+<span class="fc" id="L41">                        chatMessage.getGame().getId(),</span>
+<span class="fc" id="L42">                        chatMessage.getUser().getId(),</span>
+<span class="fc" id="L43">                        chatMessage.getUser().getUsername(),</span>
+<span class="fc" id="L44">                        chatMessage.getMessage(),                        </span>
+<span class="fc" id="L45">                        chatMessage.getMessageDateTime()))</span>
+<span class="fc" id="L46">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L48">        return messageList;</span>
+    }
+
+    @Transactional( rollbackFor = { DataAccessException.class, GameNotFoundException.class, NotFoundException.class })
+    public void saveMessage(ChatMessageDTO chatMessageDTO) throws DataAccessException, GameNotFoundException, NotFoundException {
+        
+<span class="fc" id="L54">        Optional&lt;Game&gt; gameOpt = this.gameService.getById(chatMessageDTO.getIdGame()); </span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (!gameOpt.isPresent()) {            </span>
+<span class="fc" id="L56">            throw new GameNotFoundException(chatMessageDTO.getIdGame());                 </span>
+        }
+
+<span class="fc" id="L59">        Game game = gameOpt.get();</span>
+        
+<span class="fc" id="L61">        User user = this.userService.findUser(chatMessageDTO.getIdUser());</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L63">            throw new NotFoundException(&quot;No se encontró al usuario con id :&quot; + chatMessageDTO.getIdUser());            </span>
+        }        
+
+        // Convertimos el DTO a una entidad ChatMessage
+<span class="fc" id="L67">        ChatMessage chatMessage = new ChatMessage();</span>
+<span class="fc" id="L68">        chatMessage.setMessage(chatMessageDTO.getMessage());</span>
+<span class="fc" id="L69">        chatMessage.setGame(game);</span>
+<span class="fc" id="L70">        chatMessage.setUser(user);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        chatMessage.setMessageDateTime(chatMessageDTO.getMessageDateTime() != null</span>
+<span class="fc" id="L72">                ? chatMessageDTO.getMessageDateTime()</span>
+<span class="fc" id="L73">                : LocalDateTime.now());  // Establece la fecha/hora actual si no está en el DTO</span>
+
+        // Guardamos la entidad en la base de datos
+<span class="fc" id="L76">        chatMessagesRepository.save(chatMessage);</span>
+<span class="fc" id="L77">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

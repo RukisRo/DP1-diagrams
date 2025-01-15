@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.game</a> &gt; <span class="el_source">GameService.java</span></div><h1>GameService.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.game;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Collections;
+
+import org.jpatterns.gof.BuilderPattern;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserRepository;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserService;
+import lombok.extern.slf4j.Slf4j;
+import es.us.dp1.lx_xy_24_25.your_game_name.CustomBuilders.GameBuilder;
+import es.us.dp1.lx_xy_24_25.your_game_name.CustomBuilders.GameType;
+import es.us.dp1.lx_xy_24_25.your_game_name.CustomValidators.GameCreationValidator;
+import es.us.dp1.lx_xy_24_25.your_game_name.CustomValidators.GameJoinValidator;
+import es.us.dp1.lx_xy_24_25.your_game_name.CustomValidators.GameValidator;
+import es.us.dp1.lx_xy_24_25.your_game_name.CustomValidators.GameValidatorContext;
+import es.us.dp1.lx_xy_24_25.your_game_name.exceptions.GameNotFoundException;
+import es.us.dp1.lx_xy_24_25.your_game_name.exceptions.ResourceNotFoundException;
+import es.us.dp1.lx_xy_24_25.your_game_name.leader.LeaderDTO;
+import es.us.dp1.lx_xy_24_25.your_game_name.leader.LeaderService;
+import es.us.dp1.lx_xy_24_25.your_game_name.mission.Mission;
+import es.us.dp1.lx_xy_24_25.your_game_name.mission.MissionService;
+import es.us.dp1.lx_xy_24_25.your_game_name.round.Round;
+import es.us.dp1.lx_xy_24_25.your_game_name.round.RoundService;
+import es.us.dp1.lx_xy_24_25.your_game_name.team.TeamDTO;
+import es.us.dp1.lx_xy_24_25.your_game_name.team.TeamService;
+
+@Service
+<span class="fc" id="L39">@Slf4j // Primera versión de prueba de un sistema de Log</span>
+public class GameService {
+
+    private final GameRepository gameRepository;
+    private final UserService userService;
+    private final PlayersInGameService pigService;
+    private final RoundService roundService;
+    private final MissionService missionService;
+    private final TeamService teamService;
+    private final LeaderService leaderService;
+    private final UserRepository userRepository;
+
+    @Autowired
+    public GameService(PlayersInGameService pigService, GameRepository gameRepository,
+            UserService userService, RoundService roundService,
+            MissionService missionService, TeamService teamService, LeaderService leaderService,
+<span class="fc" id="L55">            GameValidator gameValidator, UserRepository userRepository) {</span>
+<span class="fc" id="L56">        this.gameRepository = gameRepository;</span>
+<span class="fc" id="L57">        this.userService = userService;</span>
+<span class="fc" id="L58">        this.roundService = roundService;</span>
+<span class="fc" id="L59">        this.missionService = missionService;</span>
+<span class="fc" id="L60">        this.pigService = pigService;</span>
+<span class="fc" id="L61">        this.teamService = teamService;</span>
+<span class="fc" id="L62">        this.leaderService = leaderService;</span>
+<span class="fc" id="L63">        this.userRepository = userRepository;</span>
+
+<span class="fc" id="L65">    }</span>
+
+    // Refactorización de Switch de tipo &quot;Extract Method&quot;: obtener el nº de Espías
+    // de la partida en función del nº de jugadores
+    private int getNumSpies(int playerCount) {
+
+        int result;
+
+<span class="pc bpc" id="L73" title="1 of 4 branches missed.">        switch (playerCount) {</span>
+            case 5:
+            case 6:
+<span class="fc" id="L76">                result = 2;</span>
+<span class="fc" id="L77">                break;</span>
+            case 7:
+            case 8:
+            case 9:
+<span class="fc" id="L81">                result = 3;</span>
+<span class="fc" id="L82">                break;</span>
+            case 10:
+<span class="fc" id="L84">                result = 4;</span>
+<span class="fc" id="L85">                break;</span>
+            default:
+<span class="nc" id="L87">                throw new IllegalArgumentException(&quot;Not enough players to start the game&quot;);</span>
+        }
+
+<span class="fc" id="L90">        return result;</span>
+    }
+
+    // Método para crear una nueva partida
+    @Transactional(rollbackFor = { DataAccessException.class, RuntimeException.class, IllegalArgumentException.class })
+    public Game createGame(String gameName, int playersNumber) {
+
+        // Obtenemos el usuario actualmente logado en el sistema
+<span class="fc" id="L98">        User user = this.userService.findUserByToken();</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L100">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+
+        // Creación de la instancia del objeto Partida con Patrón de Diseño Builder,
+        // antes de llamar a gameValidator.validate()
+<span class="fc" id="L105">        Game game = GameBuilder.ofType(GameType.STANDARD)</span>
+<span class="fc" id="L106">                .withGameName(gameName)</span>
+<span class="fc" id="L107">                .withPlayersNumber(playersNumber)</span>
+<span class="fc" id="L108">                .withCreatorUser(user)</span>
+<span class="fc" id="L109">                .build();</span>
+
+        // Primera versión de uso de Log
+<span class="fc" id="L112">        log.info(&quot;Clase GameService, método createGame with gameName=&quot; + gameName);</span>
+
+        // Validar la creación de la partida usando la clase de validación personalizada
+        // GameValidator
+        // aplicando el Patrón de Diseño Estrategia
+<span class="fc" id="L117">        Errors errors = new BeanPropertyBindingResult(game, &quot;game&quot;);</span>
+
+        // Instanciamos el objeto contexto del Patrón Estrategia
+<span class="fc" id="L120">        GameValidatorContext gameValidatorContext = new GameValidatorContext();</span>
+
+        // Instanciamos el objeto Estrategia/Validador adecuado para este caso RN &lt;16&gt;
+        // Validación RN &lt;16&gt; - Sólo poder CREAR una partida
+        // Si el usuario actual (Creador) ya tiene una partida creada y en curso no
+        // podrá crear otra
+<span class="fc" id="L126">        GameCreationValidator gameCreationValidator = new GameCreationValidator(gameRepository, userService);</span>
+
+        // Y asignamos al contexto el objeto estrategia/validador a aplicar en este caso
+        // : CREATION_VALIDATOR
+<span class="fc" id="L130">        gameValidatorContext.setValidator(gameCreationValidator);</span>
+
+        // Realizamos la validación a través del contexto
+<span class="fc" id="L133">        gameValidatorContext.validate(game, errors);</span>
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (errors.hasErrors()) {</span>
+            // Extraemos los mensajes defaultMessage y los concatenamos si ha fallado más de
+            // una validación
+<span class="fc" id="L138">            String errorMsg = errors.getAllErrors()</span>
+<span class="fc" id="L139">                    .stream()</span>
+<span class="fc" id="L140">                    .map(error -&gt; error.getDefaultMessage()) // Obtener el defaultMessage de cada error</span>
+<span class="fc" id="L141">                    .collect(Collectors.joining(&quot;\n&quot;)); // Concatenarlos con un salto de línea</span>
+
+<span class="fc" id="L143">            throw new IllegalArgumentException(errorMsg);</span>
+        }
+
+        // Pasadas las validaciones creamos la partida en la BD
+<span class="fc" id="L147">        gameRepository.save(game);</span>
+
+        // Y unimos al usuario creador a esta partida recien creada
+        // PlayersInGames player = new PlayersInGames(user, game);
+
+        // Y la salvamos en la Base de Datos : unimos al usurio 'player' a la partida
+        // 'game'
+        // PlayersInGames savedPlayer = pigService.savePlayersInGames(player);
+
+        // Se vuelve a utilizar el método joinPlayer() que realiza la validación
+        // exclusiva
+        // de no estar unido a partida, para dejar crear definitivamente. Dejo de
+        // momento comentadas
+        // las dos líneas de código anterior
+<span class="fc" id="L161">        joinPlayer(game);</span>
+
+<span class="fc" id="L163">        return game;</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Iterable&lt;Game&gt; getAllGames() {
+<span class="fc" id="L168">        return gameRepository.findAll(); // Esto devuelve todas las partidas</span>
+    }
+
+    // Método para obtener una partida a partir de su Id
+    @Transactional(readOnly = true)
+    public Optional&lt;Game&gt; getById(int gameId) {
+<span class="fc" id="L174">        Optional&lt;Game&gt; gameOptional = this.gameRepository.findById(gameId);</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (gameOptional.isPresent()) {</span>
+<span class="fc" id="L176">            return gameOptional;</span>
+        } else {
+<span class="fc" id="L178">            throw new GameNotFoundException(gameId);</span>
+        }
+    }
+
+    // Método para obtener el código de una partida por su ID
+    @Transactional(readOnly = true)
+    public String getGameCodeById(int gameId) {
+<span class="fc" id="L185">        Optional&lt;Game&gt; gameOptional = this.gameRepository.findById(gameId);</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">        if (gameOptional.isPresent()) {</span>
+<span class="fc" id="L187">            return gameOptional.get().getGameCode(); // checkiar que getCode() exista en la clase Game</span>
+        } else {
+<span class="nc" id="L189">            return null; // se podria lanzar una excepcion</span>
+        }
+    }
+
+    // Método para obtener todas las partidas CREADAS por un usuario
+    @Transactional(readOnly = true)
+    public Iterable&lt;Game&gt; getAllGamesByCreatorUser(int creatorUserId) {
+
+<span class="fc" id="L197">        User creatorUser = this.userService.findUser(creatorUserId);</span>
+
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (creatorUser == null) {</span>
+<span class="nc" id="L200">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+
+<span class="fc" id="L203">        return gameRepository.findAllByCreatorUser(creatorUser);</span>
+    }
+
+    // Método para obtener todas las partidas PARTICIPADAS por un usuario
+    @Transactional(readOnly = true)
+    public Iterable&lt;Game&gt; getAllGamesByParticipateUser(int playerId) {
+
+<span class="fc" id="L210">        User participateUser = this.userService.findUser(playerId);</span>
+
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">        if (participateUser == null) {</span>
+<span class="nc" id="L213">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+
+<span class="fc" id="L216">        return gameRepository.findAllByParticipateUser(participateUser);</span>
+    }
+
+    // Método para obtener todas las partidas CREADAS o PARTICIPADAS por un usuario
+    @Transactional(readOnly = true)
+    public Iterable&lt;Game&gt; getAllGamesByCreatorOrParticipateUser(int playerId) {
+
+<span class="fc" id="L223">        User participateUser = this.userService.findUser(playerId);</span>
+
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (participateUser == null) {</span>
+<span class="nc" id="L226">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+
+<span class="fc" id="L229">        return gameRepository.findAllByCreatorOrParticipateUser(participateUser);</span>
+    }
+
+    // Método para obtener una partida por su código
+    @Transactional(readOnly = true)
+    public Game findGameByGameCode(String gameCode) {
+<span class="fc" id="L235">        Optional&lt;Game&gt; gameOptional = gameRepository.findGameByGameCode(gameCode);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (gameOptional.isEmpty()) {</span>
+<span class="fc" id="L237">            throw new RuntimeException(&quot;Partida no encontrada&quot;);</span>
+        }
+<span class="fc" id="L239">        Game game = gameOptional.get();</span>
+<span class="fc" id="L240">        return game;</span>
+    }
+
+    // Método para meter jugadores en partida
+    @Transactional(rollbackFor = { DataAccessException.class, RuntimeException.class, IllegalArgumentException.class })
+    public PlayersInGames joinPlayer(Game game) throws DataAccessException, RuntimeException, IllegalArgumentException {
+
+        // Primera versión de uso de Log
+<span class="fc" id="L248">        log.info(&quot;Clase GameService, método joinPlayer() with gameName=&quot; + game.getGameName());</span>
+
+<span class="fc" id="L250">        User user = this.userService.findUserByToken();</span>
+
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L253">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+
+        // Validar la unión a la partida usando la clase de validación personalizada
+        // GameValidator
+        // aplicando el Patrón de Diseño Estrategia
+<span class="fc" id="L259">        Errors errors = new BeanPropertyBindingResult(game, &quot;game&quot;);</span>
+
+        // Instanciamos el objeto contexto del Patrón Estrategia
+<span class="fc" id="L262">        GameValidatorContext gameValidatorContext = new GameValidatorContext();</span>
+
+        // Instanciamos el objeto Estrategia/Validador adecuado para este caso RN &lt;17&gt;
+        // Validación RN &lt;17&gt; - Sólo poder UNIRSE una partida, si NO está ya en una EN
+        // CURSO
+        // Si el usuario actual a UNIR ya está unido a una partida que está en curso no
+        // podrá uniser a otra
+<span class="fc" id="L269">        GameJoinValidator gameJoinValidator = new GameJoinValidator(gameRepository, userService);</span>
+
+        // Y asignamos al contexto el objeto estrategia/validador a aplicar en este caso
+        // : JOIN_VALIDATOR
+<span class="fc" id="L273">        gameValidatorContext.setValidator(gameJoinValidator);</span>
+
+        // Realizamos la validación a través del contexto
+<span class="fc" id="L276">        gameValidatorContext.validate(game, errors);</span>
+
+        // gameValidator.validate(game, errors);
+
+<span class="fc bfc" id="L280" title="All 2 branches covered.">        if (errors.hasErrors()) {</span>
+            // Extraemos los mensajes defaultMessage y los concatenamos si ha fallado más de
+            // una validación
+<span class="fc" id="L283">            String errorMsg = errors.getAllErrors()</span>
+<span class="fc" id="L284">                    .stream()</span>
+<span class="fc" id="L285">                    .map(error -&gt; error.getDefaultMessage()) // Obtener el defaultMessage de cada error</span>
+<span class="fc" id="L286">                    .collect(Collectors.joining(&quot;\n&quot;)); // Concatenarlos con un salto de línea</span>
+
+<span class="fc" id="L288">            throw new IllegalArgumentException(errorMsg);</span>
+        }
+
+        // Pasadas las validaciones creamos la instancia que relaciona al usuario y la
+        // partida
+<span class="fc" id="L293">        PlayersInGames player = new PlayersInGames(user, game);</span>
+
+        // Y la salvamos en la Base de Datos : unimos al usurio 'player' a la partida
+        // 'game'
+<span class="fc" id="L297">        PlayersInGames savedPlayer = pigService.savePlayersInGames(player);</span>
+
+<span class="fc" id="L299">        return savedPlayer;</span>
+    }
+
+    @Transactional(rollbackFor = { DataAccessException.class, ResourceNotFoundException.class })
+    public Game updateGame(Integer id, String gameName, int playersNumber, LocalDateTime startDate,
+            LocalDateTime endDate) throws DataAccessException, ResourceNotFoundException {
+
+<span class="fc" id="L306">        Game game = gameRepository.findById(id)</span>
+<span class="pc" id="L307">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Game not found with ID: &quot; + id));</span>
+
+        // Validar y actualizar campos
+
+<span class="pc bpc" id="L311" title="2 of 4 branches missed.">        if (gameName != null &amp;&amp; !gameName.isEmpty()) {</span>
+<span class="fc" id="L312">            game.setGameName(gameName);</span>
+        }
+
+<span class="pc bpc" id="L315" title="2 of 4 branches missed.">        if (playersNumber &gt;= 5 &amp;&amp; playersNumber &lt;= 10) {</span>
+<span class="fc" id="L316">            game.setPlayersNumber(playersNumber);</span>
+        }
+<span class="pc bpc" id="L318" title="2 of 4 branches missed.">        if (startDate != null &amp;&amp; startDate.isBefore(LocalDateTime.now())) {</span>
+<span class="fc" id="L319">            game.setStartDateTime(startDate);</span>
+        }
+<span class="pc bpc" id="L321" title="2 of 4 branches missed.">        if (endDate != null &amp;&amp; endDate.isAfter(LocalDateTime.now())) {</span>
+<span class="fc" id="L322">            game.setEndDateTime(endDate);</span>
+        }
+
+<span class="fc" id="L325">        return gameRepository.save(game);</span>
+    }
+
+    @Transactional(rollbackFor = { DataAccessException.class, ResourceNotFoundException.class })
+    public Game startGame(String gameCode) throws DataAccessException, ResourceNotFoundException {
+
+        // Update start datetime, start chat, apply roles to players, and start the game
+<span class="fc" id="L332">        Game game = gameRepository.findGameByGameCode(gameCode)</span>
+<span class="pc" id="L333">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Game not found with code: &quot; + gameCode));</span>
+
+        // Comprobar que la partida tiene el número de jugadores necesario
+<span class="fc" id="L336">        List&lt;PlayersInGames&gt; playersC = pigService.getPlayersByGameCode(gameCode);</span>
+<span class="pc bpc" id="L337" title="1 of 4 branches missed.">        if (playersC == null || playersC.size() &lt; game.getPlayersNumber()) {</span>
+<span class="fc" id="L338">            throw new IllegalArgumentException(&quot;No hay suficientes jugadores para empezar la partida&quot;);</span>
+        }
+
+<span class="fc" id="L341">        game.setStartDateTime(LocalDateTime.now());</span>
+
+        // Get players in the game
+<span class="fc" id="L344">        List&lt;PlayersInGames&gt; players = pigService.getPlayersByGameCode(gameCode);</span>
+
+        // Calculate the number of spies and resistance based on the number of players
+<span class="fc" id="L347">        int playerCount = game.getPlayersNumber();</span>
+        int numSpies;
+
+        // Shuffle players for random role assignment
+<span class="fc" id="L351">        Collections.shuffle(players);</span>
+
+        // Assign roles to players
+<span class="fc" id="L354">        Roles rolEspia = gameRepository.findRoleByName(&quot;Espia&quot;);</span>
+<span class="fc" id="L355">        Roles rolResistencia = gameRepository.findRoleByName(&quot;Resistencia&quot;);</span>
+
+<span class="fc" id="L357">        int i = 0;</span>
+
+        // Refactorización de Switch de tipo &quot;Extract Method&quot;
+<span class="fc" id="L360">        numSpies = getNumSpies(playerCount);</span>
+
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        for (PlayersInGames player : players) {</span>
+
+<span class="fc bfc" id="L364" title="All 2 branches covered.">            if (i &lt; numSpies) {</span>
+<span class="fc" id="L365">                player.setIdRol(rolEspia);</span>
+            } else {
+<span class="fc" id="L367">                player.setIdRol(rolResistencia);</span>
+            }
+            // Save the player's updated role
+<span class="fc" id="L370">            pigService.savePlayersInGames(player);</span>
+<span class="fc" id="L371">            i++;</span>
+<span class="fc" id="L372">        }</span>
+
+        // Seleccionar líder aleatoriamente
+<span class="fc" id="L375">        Collections.shuffle(players);</span>
+<span class="fc" id="L376">        PlayersInGames leader = players.get(0); // El primer jugador después del shuffle será el líder</span>
+
+        // Crear un objeto LeaderDTO para guardar el líder
+<span class="fc" id="L379">        LeaderDTO leaderDTO = new LeaderDTO();</span>
+<span class="fc" id="L380">        leaderDTO.setIdGame(game.getId());</span>
+<span class="fc" id="L381">        leaderDTO.setRoundNumber(1); // Primera ronda</span>
+<span class="fc" id="L382">        leaderDTO.setMissionNumber(1); // Primera misión</span>
+<span class="fc" id="L383">        leaderDTO.setUserLiderId(leader.getIdPlayer().getId()); // ID del líder</span>
+
+        // Usar LeaderService para guardar al líder
+<span class="fc" id="L386">        leaderService.postLeader(leaderDTO);</span>
+
+<span class="fc" id="L388">        return gameRepository.save(game);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public GameStatusResponseDTO getGameStatus(String gameCode) {
+
+<span class="fc" id="L394">        Game game = gameRepository.findGameByGameCode(gameCode) // Buscar la partida por código</span>
+<span class="fc" id="L395">                .orElseThrow(() -&gt; {</span>
+                    // System.out.println(&quot;Buscando partida con código: &quot; + gameCode);
+<span class="nc" id="L397">                    return new IllegalArgumentException(&quot;No se encontró la partida con el código: &quot; + gameCode);</span>
+                });
+
+<span class="fc" id="L400">        User loggedUser = userService.findUserByToken(); // Obtener el usuario logueado</span>
+
+<span class="fc" id="L402">        PlayersInGames player = pigService.getPlayersByGameCode(gameCode).stream() // Comprobar si el jugador logueado</span>
+                                                                                   // está en la partida
+<span class="fc" id="L404">                .filter(p -&gt; p.getIdPlayer().getId().equals(loggedUser.getId()))</span>
+<span class="fc" id="L405">                .findFirst()</span>
+<span class="pc" id="L406">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;El usuario no está participando en esta partida&quot;));</span>
+
+<span class="fc" id="L408">        Integer lastestRound = leaderService.getLastestRound(game.getId()); // Obtener la última ronda</span>
+
+<span class="fc" id="L410">        Integer lastestMission = leaderService.getLastestMission(game.getId()); // Obtener la última misión</span>
+
+<span class="fc" id="L412">        Roles playerRole = player.getIdRol(); // Obtener el rol del jugador</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">        if (playerRole == null) {</span>
+<span class="fc" id="L414">            throw new IllegalStateException(&quot;No se ha asignado un rol al jugador&quot;);</span>
+        }
+
+<span class="fc" id="L417">        Mission currentMission = missionService.getMission(game.getId(), loggedUser.getId(), lastestMission); // Obtener</span>
+                                                                                                              // la
+                                                                                                              // misión
+                                                                                                              // actual
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        if (currentMission == null) {</span>
+<span class="fc" id="L422">            currentMission = new Mission();</span>
+<span class="fc" id="L423">            currentMission.setMissionNumber(1);</span>
+<span class="fc" id="L424">            currentMission.setGame(game);</span>
+<span class="fc" id="L425">            currentMission.setUser(loggedUser);</span>
+        }
+
+<span class="fc" id="L428">        Round currentRound = roundService.getRound(game.getId(), loggedUser.getId(), lastestMission,</span>
+                lastestRound); // Obtener la ronda actual
+<span class="fc bfc" id="L430" title="All 2 branches covered.">        if (currentRound == null) {</span>
+<span class="fc" id="L431">            currentRound = new Round();</span>
+<span class="fc" id="L432">            currentRound.setRoundNumber(1);</span>
+<span class="fc" id="L433">            currentRound.setMissionNumber(lastestMission);</span>
+<span class="fc" id="L434">            currentRound.setGame(game);</span>
+<span class="fc" id="L435">            currentRound.setUser(loggedUser);</span>
+        }
+
+        // Calcular votos
+<span class="fc" id="L439">        Integer totalRoundVotes = roundService.countVotesByRoundNumber(game.getId(), lastestRound,</span>
+                lastestMission); // Contar votos de la ronda actual
+
+<span class="fc" id="L442">        Integer totalMissionVotes = missionService.countVotesByMissionNumber(game.getId(),</span>
+                lastestMission); // Contar votos de la misión actual
+
+<span class="fc" id="L445">        Boolean yourRoundVote = currentRound.getVote(); // Voto de la ronda actual</span>
+
+<span class="fc" id="L447">        Boolean yourMissionVote = currentMission.getVote(); // Voto de la misión actual</span>
+
+<span class="fc" id="L449">        Integer maxVotesRound = game.getPlayersNumber(); // Número máximo de votos en la ronda</span>
+
+<span class="fc" id="L451">        List&lt;String&gt; spies = pigService.getSpyUsernamesByGameCode(gameCode); // Obtener los espías</span>
+
+<span class="fc bfc" id="L453" title="All 2 branches covered.">        if (playerRole.getId() == 2) {</span>
+<span class="fc" id="L454">            spies.remove(loggedUser.getUsername());</span>
+        }
+
+<span class="fc" id="L457">        List&lt;Integer&gt; team = Optional.ofNullable(teamService // Obtener el equipo de la ronda y misión actuales</span>
+<span class="fc" id="L458">                .getTeamsByGameRoundMission(game.getId(), lastestRound,</span>
+                        lastestMission))
+<span class="fc" id="L460">                .orElse(Collections.emptyList())</span>
+<span class="fc" id="L461">                .stream()</span>
+<span class="fc" id="L462">                .map(TeamDTO::getUserId)</span>
+<span class="fc" id="L463">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L465">        String teamLeader = leaderService.getLeader(game.getId(), lastestRound,</span>
+<span class="fc" id="L466">                lastestMission).getUserLider().getUsername(); // Obtener el líder del equipo actual</span>
+
+        Integer maxVotesMission; // Número máximo de votos en la misión
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        if (team.isEmpty()) {</span>
+<span class="fc" id="L470">            maxVotesMission = 0;</span>
+        } else {
+<span class="fc" id="L472">            maxVotesMission = team.size();</span>
+        }
+
+<span class="fc" id="L475">        List&lt;Integer&gt; playersID = pigService.getPlayersByGameCode(gameCode).stream() // Obtener los IDs de los jugadores</span>
+<span class="fc" id="L476">                .map(p -&gt; p.getIdPlayer().getId())</span>
+<span class="fc" id="L477">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L479">        List&lt;String&gt; teamMembers = team.stream() // Obtener los nombres de los miembros del equipo</span>
+<span class="fc" id="L480">                .map(id -&gt; userRepository.findById(id)</span>
+<span class="pc" id="L481">                        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with ID: &quot; + id))</span>
+<span class="nc" id="L482">                        .getUsername())</span>
+<span class="fc" id="L483">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L485">        Integer successVotesMission = missionService.getSuccessVotesByMissionNumber(game.getId(), lastestMission); // Obtener</span>
+                                                                                                                   // votos
+                                                                                                                   // de
+                                                                                                                   // éxito
+                                                                                                                   // de
+                                                                                                                   // la
+                                                                                                                   // misión
+
+<span class="fc" id="L493">        Integer successVotesRound = roundService.recountYesVotes(game.getId(), lastestRound, lastestMission); // Obtener</span>
+                                                                                                              // votos
+                                                                                                              // de
+                                                                                                              // éxito
+                                                                                                              // de la
+                                                                                                              // ronda
+
+<span class="fc bfc" id="L500" title="All 2 branches covered.">        String winnerRol = (game.getWinnerRol() != null) ? game.getWinnerRol().getRol() : &quot;Aún no hay ganador&quot;; // Obtener</span>
+                                                                                                                // el
+                                                                                                                // rol
+                                                                                                                // del
+                                                                                                                // ganador
+
+<span class="fc" id="L506">        return new GameStatusResponseDTO(playerRole, currentMission, currentRound, totalRoundVotes, totalMissionVotes,</span>
+                yourRoundVote,
+                yourMissionVote, maxVotesRound, spies, team, teamLeader, maxVotesMission, playersID, teamMembers,
+                successVotesMission, successVotesRound, lastestRound, lastestMission, winnerRol);
+    }
+
+    // Find By Id
+    @Transactional(readOnly = true)
+    public Optional&lt;Game&gt; findById(Integer id) {
+<span class="fc" id="L515">        return gameRepository.findById(id);</span>
+    }
+
+    @Transactional(rollbackFor = { DataAccessException.class, RuntimeException.class })
+    public void endGame(int gameId) {
+<span class="fc" id="L520">        Game game = gameRepository.findById(gameId)</span>
+<span class="fc" id="L521">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Game not found with ID: &quot; + gameId));</span>
+
+<span class="fc" id="L523">        Roles winnerRole = determineWinnerRole(gameId);</span>
+
+<span class="fc" id="L525">        game.setWinnerRol(winnerRole);</span>
+<span class="fc" id="L526">        game.setEndDateTime(LocalDateTime.now());</span>
+
+<span class="fc" id="L528">        gameRepository.save(game);</span>
+
+<span class="fc" id="L530">        log.info(&quot;Partida con ID: &quot; + gameId + &quot; terminada. Rol ganador: &quot; + winnerRole.getRol());</span>
+<span class="fc" id="L531">    }</span>
+
+    public Roles determineWinnerRole(int gameId) {
+
+<span class="fc" id="L535">        Game game = gameRepository.findById(gameId)</span>
+<span class="pc" id="L536">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Game not found with ID: &quot; + gameId));</span>
+
+<span class="pc bpc" id="L538" title="1 of 2 branches missed.">        if (roundService.gameEndedByRoundFails(gameId)) {</span>
+<span class="fc" id="L539">            return gameRepository.findRoleByName(&quot;Espia&quot;);</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">        } else if (missionService.ganaEspiaPartida(gameId)) {</span>
+<span class="nc" id="L541">            return gameRepository.findRoleByName(&quot;Espia&quot;);</span>
+<span class="nc bnc" id="L542" title="All 2 branches missed.">        } else if (missionService.ganaResistenciaPartida(gameId)) {</span>
+<span class="nc" id="L543">            return gameRepository.findRoleByName(&quot;Resistencia&quot;);</span>
+        }
+
+<span class="nc" id="L546">        throw new IllegalStateException(&quot;No se puede determinar el ganador.&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

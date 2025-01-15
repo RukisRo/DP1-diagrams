@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameStatusResponseDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.game</a> &gt; <span class="el_source">GameStatusResponseDTO.java</span></div><h1>GameStatusResponseDTO.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.game;
+
+import java.util.List;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.mission.Mission;
+import es.us.dp1.lx_xy_24_25.your_game_name.round.Round;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+<span class="fc" id="L11">@Setter</span>
+public class GameStatusResponseDTO {
+    /**
+     * yourRol: &quot;Resistencia&quot;,
+     * round: 2,
+     * mission:1,
+     * totalVotes: 0,
+     * yourMissionVote: false,
+     * yourRoundVote: false,
+     */
+    // rol
+<span class="fc" id="L22">    private String yourRol;</span>
+<span class="fc" id="L23">    private Integer round;</span>
+<span class="fc" id="L24">    private Integer mission;</span>
+<span class="fc" id="L25">    private Integer totalRoundVotes;</span>
+<span class="fc" id="L26">    private Integer totalMissionVotes;</span>
+<span class="fc" id="L27">    private Boolean yourRoundVote;</span>
+<span class="fc" id="L28">    private Boolean yourMissionVote;</span>
+<span class="fc" id="L29">    private Integer maxVotesRound;</span>
+<span class="fc" id="L30">    private List&lt;String&gt; spies;</span>
+<span class="fc" id="L31">    private List&lt;Integer&gt; team;</span>
+<span class="fc" id="L32">    private String teamLeader;</span>
+<span class="fc" id="L33">    private Integer maxVotesMission;</span>
+<span class="fc" id="L34">    private List&lt;Integer&gt; playersID;</span>
+<span class="fc" id="L35">    private List&lt;String&gt; teamMembers;</span>
+<span class="fc" id="L36">    private Integer successVotesMission;</span>
+<span class="fc" id="L37">    private Integer successVotesRound;</span>
+<span class="fc" id="L38">    private Integer lastestRound;</span>
+<span class="fc" id="L39">    private Integer lastestMission;</span>
+<span class="fc" id="L40">    private String winnerRol;</span>
+
+    // Constructor
+    public GameStatusResponseDTO(Roles rol, Mission mission, Round round, Integer totalRoundVotes,
+            Integer totalMissionVotes, Boolean yourRoundVote, Boolean yourMissionVote, Integer maxVotesRound,
+            List&lt;String&gt; spies, List&lt;Integer&gt; team, String teamLeader, Integer maxVotesMission, List&lt;Integer&gt; playersID,
+<span class="fc" id="L46">            List&lt;String&gt; teamMembers, Integer successVotesMission, Integer successVotesRound, Integer lastestRound, Integer lastestMission, String winnerRol) {</span>
+<span class="fc" id="L47">        this.yourRol = rol.getRol();</span>
+<span class="fc" id="L48">        this.round = round.getRoundNumber();</span>
+<span class="fc" id="L49">        this.mission = mission.getMissionNumber();</span>
+<span class="fc" id="L50">        this.totalRoundVotes = totalRoundVotes;</span>
+<span class="fc" id="L51">        this.totalMissionVotes = totalMissionVotes;</span>
+<span class="fc" id="L52">        this.yourRoundVote = yourRoundVote;</span>
+<span class="fc" id="L53">        this.yourMissionVote = yourMissionVote;</span>
+<span class="fc" id="L54">        this.maxVotesRound = maxVotesRound;</span>
+<span class="fc" id="L55">        this.maxVotesMission = maxVotesMission;</span>
+<span class="fc" id="L56">        this.spies = spies;</span>
+<span class="fc" id="L57">        this.team = team;</span>
+<span class="fc" id="L58">        this.teamLeader = teamLeader;</span>
+<span class="fc" id="L59">        this.playersID = playersID;</span>
+<span class="fc" id="L60">        this.teamMembers = teamMembers;</span>
+<span class="fc" id="L61">        this.successVotesMission = successVotesMission;</span>
+<span class="fc" id="L62">        this.successVotesRound = successVotesRound;</span>
+<span class="fc" id="L63">        this.lastestRound = lastestRound;</span>
+<span class="fc" id="L64">        this.lastestMission = lastestMission;</span>
+<span class="fc" id="L65">        this.winnerRol = winnerRol;</span>
+
+<span class="fc" id="L67">    }</span>
+
+    // Constructor sin parámetros
+<span class="fc" id="L70">    public GameStatusResponseDTO() {</span>
+<span class="fc" id="L71">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

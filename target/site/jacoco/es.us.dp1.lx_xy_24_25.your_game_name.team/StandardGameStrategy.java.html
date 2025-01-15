@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StandardGameStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.team</a> &gt; <span class="el_source">StandardGameStrategy.java</span></div><h1>StandardGameStrategy.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.team;
+
+import org.jpatterns.gof.StrategyPattern;
+import org.springframework.stereotype.Component;
+
+@Component
+@StrategyPattern
+<span class="fc" id="L8">public class StandardGameStrategy implements TeamSizeStrategy {</span>
+    @Override
+    public int calculateTeamSize(int totalPlayers, int missionNumber) {
+        // Validar el número de jugadores
+<span class="fc bfc" id="L12" title="All 4 branches covered.">        if (totalPlayers &lt; 5 || totalPlayers &gt; 10) {</span>
+<span class="fc" id="L13">            throw new IllegalArgumentException(&quot;Número de jugadores fuera de rango (5-10 jugadores): &quot; + totalPlayers);</span>
+        }
+
+        // Validar la misión
+<span class="fc bfc" id="L17" title="All 4 branches covered.">        if (missionNumber &lt; 1 || missionNumber &gt; 5) {</span>
+<span class="fc" id="L18">            throw new IllegalArgumentException(&quot;Número de misión fuera de rango (1-5 misiones)&quot;);</span>
+        }
+
+        // Tabla de tamaños de equipo (filas: misiones, columnas: jugadores)
+<span class="fc" id="L22">        int[][] teamSizeTable = {</span>
+                { 2, 2, 2, 3, 3, 3 }, // 1ª Misión
+                { 3, 3, 3, 4, 4, 4 }, // 2ª Misión
+                { 2, 4, 3, 4, 4, 4 }, // 3ª Misión
+                { 3, 3, 4, 5, 5, 5 }, // 4ª Misión
+                { 3, 4, 4, 5, 5, 5 } // 5ª Misión
+        };
+
+        // Cálculo de índices en la tabla
+        // Índice para el número de jugadores, de 5 a 10 jugadores -&gt; índice de 0 a 5
+<span class="fc" id="L32">        int playerIndex = totalPlayers - 5; // (5 jugadores -&gt; índice 0, 10 jugadores -&gt; índice 5)</span>
+
+        // Índice para la misión, de 1 a 5 misiones -&gt; índice de 0 a 4
+<span class="fc" id="L35">        int missionIndex = missionNumber - 1; // (Misión 1 -&gt; índice 0, Misión 5 -&gt; índice 4)</span>
+
+        // Obtener el tamaño del equipo de la tabla
+<span class="fc" id="L38">        return teamSizeTable[missionIndex][playerIndex];</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

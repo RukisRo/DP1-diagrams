@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LeaderService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.leader</a> &gt; <span class="el_source">LeaderService.java</span></div><h1>LeaderService.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.leader;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.exceptions.GameNotFoundException;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.Game;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.GameRepository;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.PlayersInGameService;
+import es.us.dp1.lx_xy_24_25.your_game_name.game.PlayersInGames;
+import es.us.dp1.lx_xy_24_25.your_game_name.team.TeamRepository;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.UserService;
+
+@Service
+public class LeaderService {
+
+    private final LeaderRepository leaderRepository;
+
+    // Tenemos que usar GameRepository, en lugar de GameService, para evitar un ciclo entre 
+    // GameService-&gt;LeaderService-&gt;GameService que impide arracar la app
+    private final GameRepository gameRepository;    
+    private final UserService userService;
+    private final PlayersInGameService playersInGameService;
+
+    @Autowired
+    public LeaderService(LeaderRepository leaderRepository, TeamRepository teamRepository,
+<span class="fc" id="L32">            GameRepository gameRepository, UserService userService, PlayersInGameService playersInGameService) {</span>
+<span class="fc" id="L33">        this.leaderRepository = leaderRepository;</span>
+<span class="fc" id="L34">        this.gameRepository = gameRepository;</span>
+<span class="fc" id="L35">        this.userService = userService;</span>
+<span class="fc" id="L36">        this.playersInGameService = playersInGameService;</span>
+<span class="fc" id="L37">    }</span>
+
+    @Transactional(readOnly = true)
+    public Leader getLeader(Integer idGame, Integer roundNumber, Integer missionNumber) {
+<span class="fc" id="L41">        Leader leader = leaderRepository.findLeaderByGameRoundMission(idGame, roundNumber, missionNumber);</span>
+        
+<span class="fc" id="L43">        return leader;</span>
+    }
+
+    @Transactional(rollbackFor = {DataAccessException.class, IllegalArgumentException.class, RuntimeException.class})
+    public Leader postLeader(LeaderDTO leaderDTO) 
+        throws DataAccessException, IllegalArgumentException, RuntimeException {    
+            
+        // Tenemos que usar gameRepository para evitar un ciclo GameService-&gt;LeaderService-&gt;GameService
+<span class="fc" id="L51">        Game game = gameRepository.findById(leaderDTO.getIdGame())</span>
+<span class="pc" id="L52">                .orElseThrow(() -&gt; new GameNotFoundException(leaderDTO.getIdGame()));</span>
+
+        // Recuperar el usuario actualmente logeado
+<span class="fc" id="L55">        User user = userService.findUserByToken();</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L57">            throw new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
+        }
+        
+        // Crear el nuevo líder
+<span class="fc" id="L61">        Leader newLeader = new Leader();</span>
+<span class="fc" id="L62">        newLeader.setGame(game);</span>
+<span class="fc" id="L63">        newLeader.setRoundNumber(leaderDTO.getRoundNumber());</span>
+<span class="fc" id="L64">        newLeader.setMissionNumber(leaderDTO.getMissionNumber());</span>
+<span class="fc" id="L65">        newLeader.setUserLider(user);</span>
+
+        // Guardar el líder
+<span class="fc" id="L68">        return leaderRepository.save(newLeader); // Asegúrate de usar el repository adecuado</span>
+    }
+
+    @Transactional
+    public Leader assignNextLeader(Integer gameId, int currentMission, int currentRound, boolean acceptedTeam) {
+<span class="fc" id="L73">        Game game = gameRepository.findById(gameId)</span>
+<span class="pc" id="L74">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;No existe una partida con ID &quot; + gameId));</span>
+
+<span class="fc" id="L76">        List&lt;PlayersInGames&gt; players = playersInGameService.getPlayersByGameId(gameId);</span>
+
+        // Obtener el líder actual
+<span class="fc" id="L79">        Leader currentLeader = leaderRepository.findLeaderByGameRoundMission(gameId, currentRound, currentMission);</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (currentLeader == null) {</span>
+<span class="nc" id="L81">            throw new IllegalArgumentException(&quot;No se encontró el líder actual&quot;);</span>
+        }
+
+        // Identificar el próximo líder
+<span class="fc" id="L85">        PlayersInGames nextLeader = playersInGameService.getNextLeader(players, currentLeader);</span>
+
+        // Crear el nuevo líder
+<span class="fc" id="L88">        Leader newLeader = new Leader();</span>
+<span class="fc" id="L89">        newLeader.setGame(game);</span>
+
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (acceptedTeam) {</span>
+<span class="fc" id="L92">            newLeader.setMissionNumber(currentMission + 1); // Avanzar misión</span>
+<span class="fc" id="L93">            newLeader.setRoundNumber(1); // Reiniciar rondas</span>
+        } else {
+<span class="nc" id="L95">            newLeader.setMissionNumber(currentMission); // Misión actual</span>
+<span class="nc" id="L96">            newLeader.setRoundNumber(currentRound + 1); // Incrementar ronda</span>
+        }
+
+<span class="fc" id="L99">        newLeader.setUserLider(nextLeader.getIdPlayer());</span>
+
+<span class="fc" id="L101">        return leaderRepository.save(newLeader);</span>
+    }
+
+    @Transactional
+    public Integer getLastestRound(Integer gameId) {
+<span class="fc" id="L106">        return leaderRepository.findHighestRoundInHighestMission(gameId).get(0);</span>
+    }
+
+    @Transactional
+    public Integer getLastestMission(Integer gameId) {
+<span class="fc" id="L111">        return leaderRepository.findHighestMission(gameId).get(0);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

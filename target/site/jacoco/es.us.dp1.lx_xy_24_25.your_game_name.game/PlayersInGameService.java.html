@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlayersInGameService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">La resistencia</a> &gt; <a href="index.source.html" class="el_package">es.us.dp1.lx_xy_24_25.your_game_name.game</a> &gt; <span class="el_source">PlayersInGameService.java</span></div><h1>PlayersInGameService.java</h1><pre class="source lang-java linenums">package es.us.dp1.lx_xy_24_25.your_game_name.game;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.leader.Leader;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+
+import es.us.dp1.lx_xy_24_25.your_game_name.leader.Leader;
+import es.us.dp1.lx_xy_24_25.your_game_name.user.User;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+
+@Service
+<span class="fc" id="L19">public class PlayersInGameService {</span>
+    @Autowired
+    private PlayersInGamesRepository playersInGamesRepository;
+<span class="fc" id="L22">    private List&lt;User&gt; leadersHistory = new ArrayList&lt;&gt;();</span>
+
+    @Transactional(readOnly = true)
+    public List&lt;PlayersInGames&gt; getPlayersByGameId(int gameId) {
+<span class="fc" id="L26">        return playersInGamesRepository.findByGameId(gameId);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public List&lt;PlayersInGames&gt; getPlayersByGameCode(String gameCode) {
+<span class="fc" id="L31">        return playersInGamesRepository.findPlayersByGameCode(gameCode);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public List&lt;String&gt; getSpyUsernamesByGameCode(String gameCode) {
+<span class="fc" id="L36">        return playersInGamesRepository.findAllSpyUsernamesFromGameByGamecode(gameCode);</span>
+    }
+
+    @Transactional(rollbackFor=DataAccessException.class)
+    public PlayersInGames savePlayersInGames(PlayersInGames playersInGames) throws DataAccessException {
+<span class="fc" id="L41">        playersInGamesRepository.save(playersInGames);</span>
+<span class="fc" id="L42">        return playersInGames;</span>
+    }
+
+    public List&lt;PlayersInGames&gt; getPlayersInGame(Game game) {
+<span class="nc" id="L46">        return playersInGamesRepository.findByGameId(game.getId());</span>
+    }
+
+    public PlayersInGames getNextLeader(List&lt;PlayersInGames&gt; players, Leader currentLeader) {
+<span class="fc" id="L50">        int currentIndex = players.stream()</span>
+<span class="fc" id="L51">                .map(PlayersInGames::getIdPlayer)</span>
+<span class="fc" id="L52">                .map(User::getId)</span>
+<span class="fc" id="L53">                .collect(Collectors.toList())</span>
+<span class="fc" id="L54">                .indexOf(currentLeader.getUserLider().getId());</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (currentIndex == -1) {</span>
+<span class="fc" id="L56">            throw new IllegalArgumentException(&quot;Líder actual no está en la lista de jugadores&quot;);</span>
+        }
+
+        // Añadir el líder actual a la historia de líderes si no está ya en ella
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (!leadersHistory.contains(currentLeader.getUserLider())) {</span>
+<span class="fc" id="L61">            leadersHistory.add(currentLeader.getUserLider());</span>
+        }
+
+        // Encontrar el siguiente jugador que no haya sido líder
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (int i = 1; i &lt;= players.size(); i++) {</span>
+<span class="fc" id="L66">            int nextIndex = (currentIndex + i) % players.size();</span>
+<span class="fc" id="L67">            User nextUser = players.get(nextIndex).getIdPlayer();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (!leadersHistory.contains(nextUser)) {</span>
+<span class="fc" id="L69">                return players.get(nextIndex);</span>
+            }
+        }
+
+        // Si todos los jugadores ya han sido líderes, reiniciar la historia y devolver el siguiente
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (leadersHistory.size() &gt;= players.size()) {</span>
+<span class="fc" id="L75">            leadersHistory.clear();</span>
+        }
+<span class="fc" id="L77">        int nextIndex = (currentIndex + 1) % players.size();</span>
+<span class="fc" id="L78">        return players.get(nextIndex);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
