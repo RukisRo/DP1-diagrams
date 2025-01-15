@@ -1,0 +1,100 @@
+@startuml
+hide circle
+
+package " Capa de Presentación " as Presentacion {
+    hide members
+    class AuthController
+    class ChatMessageController
+    class GameRestController
+    class PlayersInGameRestController
+    class LeaderRestController
+    class MissionRestController
+    class ProfileRestController
+    class RoundRestController
+    class AchievementRestController
+    class TeamRestController
+    class UserRestController
+}
+
+package " Capa de Lógica de Negocio " as LogicaNegocio {
+    hide members
+    class AuthService
+    class ChatMessageService
+    class GameService
+    class PlayersInGameService
+    class LeaderService
+    class MissionService
+    class ProfileService
+    class RoundService
+    class AchievementService
+    class TeamService
+    class UserService
+    class AuthoritiesService
+}
+
+package " Capa de Recursos " as Recursos {
+    hide attributes
+    class ChatMessageRepository
+    class GameRepository {
+      + Integer countByCreatorUserAndGameInProgress(User user): DataAccessException
+      + Integer countByParticipateUserAndGameInProgress(User user): DataAccessException
+    }
+    class PlayersInGameRepository
+    class LeaderRepository
+    class MissionRepository
+    class RoundRepository
+    class AchievementRepository
+    class TeamRepository
+    class UserRepository
+    class AuthoritiesRepository
+}
+
+AuthController ..> AuthService
+AuthController ..> UserService
+ChatMessageController ..> ChatMessageService
+GameRestController ..> GameService
+PlayersInGameRestController ..> PlayersInGameService
+PlayersInGameRestController ..> GameService
+LeaderRestController ..> LeaderService
+MissionRestController ..> MissionService
+MissionRestController ..> LeaderService
+MissionRestController ..> GameService
+MissionRestController ..> TeamService
+ProfileRestController ..> ProfileService
+RoundRestController ..> RoundService
+RoundRestController ..> LeaderService
+RoundRestController ..> GameService
+TeamRestController ..> TeamService
+UserRestController ..> UserService
+UserRestController ..> AuthService
+
+AuthService ..> AuthoritiesService
+AuthService ..> UserService
+ChatMessageService ..> ChatMessageRepository
+ChatMessageService ..> GameService
+ChatMessageService ..> UserService
+GameService ..> GameRepository
+GameService ..> UserService
+GameService ..> RoundService
+GameService ..> MissionService
+GameService ..> TeamService
+GameService ..> LeaderService
+GameService ..> UserRepository
+PlayersInGameService ..> PlayersInGameRepository
+LeaderService ..> LeaderRepository
+LeaderService ..> GameRepository
+LeaderService ..> UserService
+LeaderService ..> PlayersInGameService
+MissionService ..> MissionRepository
+MissionService ..> GameRepository
+MissionService ..> UserService
+ProfileService ..> UserService
+RoundService ..> RoundRepository
+RoundService ..> GameRepository
+RoundService ..> UserService
+TeamService ..> TeamRepository
+TeamService ..> GameRepository
+TeamService ..> UserService
+UserService ..> UserRepository
+AuthoritiesService ..> AuthoritiesRepository
+@enduml
